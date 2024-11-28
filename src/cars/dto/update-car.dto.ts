@@ -16,6 +16,10 @@ export class UpdateCarDto {
   @IsOptional()
   year?: number;
 
+  @IsString()
+  @IsOptional()
+  engine?: string;
+
   @IsInt()
   @Min(0)
   @IsOptional()

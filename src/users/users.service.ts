@@ -7,6 +7,8 @@ import * as bcrypt from 'bcrypt';
 import { User } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+
 
 @Injectable()
 export class UsersService {
@@ -44,7 +46,8 @@ export class UsersService {
 
 
   async findUserByEmail(email: string): Promise<User | undefined> {
-    console.log('Searching for user with email:', email); // Log email parameter
+    const normalizedEmail = email.trim().toLowerCase();
+    console.log('Searching for user with normalized email:', normalizedEmail); // Log email parameter
     const user = await this.userModel.findOne({ email }).exec();
     console.log('User found:', user); // Log the result
     return user;
@@ -166,6 +169,29 @@ async updateUserPassword(userId: string, newPassword: string) {
     return this.userModel.findByIdAndUpdate(userId, { password: newPassword });
   }
 
-
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<any> {
+    const { oldPassword, newPassword } = changePasswordDto;
+  
+    // Fetch the user by ID
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+  
+    // Check if the old password matches
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Old password is incorrect');
+    }
+  
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+    // Update the user's password in the database
+    user.password = hashedPassword;
+    await user.save();
+  
+    return { message: 'Password updated successfully' };
+  }
 
 }

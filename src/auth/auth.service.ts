@@ -55,6 +55,16 @@ export class AuthService {
   // Login Logic
   async login(user: any) {
     try {
+       // Normalize email before querying
+       const normalizedEmail = user.email.trim().toLowerCase();
+
+       // Find the user by normalized email
+       const foundUser = await this.usersService.findUserByEmail(normalizedEmail);
+
+       if (!foundUser) {
+           throw new BadRequestException('Invalid email or password');
+       }
+       
         const payload = { email: user.email, sub: user._id.toString(), role: user.role };
 
         // Generate the access token

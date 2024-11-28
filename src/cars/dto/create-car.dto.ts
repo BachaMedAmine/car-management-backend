@@ -15,6 +15,10 @@ export class CreateCarDto {
   @Max(new Date().getFullYear())
   year: number;
 
+  @IsString()
+  @IsOptional()
+  engine?: string;
+
   @IsInt()
   @Min(0)
   mileage: number;

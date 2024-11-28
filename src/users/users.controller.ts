@@ -10,6 +10,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator'; // Ensure the path is correct
 import * as bcrypt from 'bcrypt';
 import { AuthGuard } from '@nestjs/passport';
+import { ChangePasswordDto } from './dto/change-password.dto';
+
 
 //mport { EmailService } from '../email/email.service';
 
@@ -98,6 +100,28 @@ export class UsersController
                 }
                 throw error; // Rethrow the error for the framework to handle
             }
+        }
+
+
+        @Put('change-password')
+        @UseGuards(JwtAuthGuard)
+        async changePassword(
+          @Req() req,
+          @Body() changePasswordDto: ChangePasswordDto,
+        ): Promise<any> {
+          const userId = req.user.sub; // Extract user ID from JWT payload
+
+          // Validate userId format
+          if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+            throw new BadRequestException('Invalid user ID');
+          }
+
+          // Validate that newPassword matches confirmNewPassword
+          if (changePasswordDto.newPassword !== changePasswordDto.confirmNewPassword) {
+            throw new BadRequestException('New password and confirm new password do not match');
+          }
+
+          return this.usersService.changePassword(userId, changePasswordDto);
         }
 
 }

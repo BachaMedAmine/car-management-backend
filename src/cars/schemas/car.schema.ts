@@ -16,7 +16,11 @@ export class Car extends Document {
   year: number;
 
   @Prop({ required: true })
+  engine: string;
+
+  @Prop({ required: true })
   mileage?: number;
+
  
   @Prop()
   imageUrl: string;

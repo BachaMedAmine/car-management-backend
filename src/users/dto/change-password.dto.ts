@@ -1,22 +1,28 @@
 // src/users/dto/change-password.dto.ts
-import { IsString, IsNotEmpty, Matches } from 'class-validator';
+
+import { IsString, IsNotEmpty, Matches, ValidateIf } from 'class-validator';
 
 export class ChangePasswordDto {
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Old password is required' })
   oldPassword: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'New password is required' })
+  @Matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@._-]{8,}$/, {
+    message:
+      'Password must be at least 8 characters long, contain at least one letter and one number, and can include special characters (@, ., _, -).',
+  })
   newPassword: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Please confirm your new password' })
   confirmNewPassword: string;
 
-  // Optionally, you can add a regex for password complexity
-  @Matches(/^(?=.*[A-Za-z])[A-Za-z\d]{8,}$/, {
-    message: 'Password must be at least 8 characters long and contain at least one letter and one number',
-  })
-  newPasswordComplexity?: string; // For more complex password rules
+  @ValidateIf((o) => o.newPassword !== o.confirmNewPassword)
+  validatePasswords() {
+    if (this.newPassword !== this.confirmNewPassword) {
+      throw new Error('New password and confirm new password do not match');
+    }
+  }
 }
