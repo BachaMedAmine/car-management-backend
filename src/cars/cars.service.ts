@@ -78,6 +78,10 @@ export class CarsService {
     return car;
   }
 
+  async getCarById(carId: string): Promise<Car> {
+    return this.carModel.findById(carId).exec();
+  }
+
   // Update a specific car
   async updateCar(id: string, updateCarDto: UpdateCarDto): Promise<Car> {
     return this.carModel.findByIdAndUpdate(id, updateCarDto, { new: true }).exec();

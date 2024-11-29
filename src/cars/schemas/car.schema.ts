@@ -6,19 +6,19 @@ import * as mongoose from 'mongoose';
 
 @Schema()
 export class Car extends Document {
-  @Prop({ required: true })
+  @Prop()
   make: string;
 
-  @Prop({ required: true })
+  @Prop()
   carModel: string;
 
-  @Prop({ required: true })
+  @Prop()
   year: number;
 
-  @Prop({ required: true })
+  @Prop()
   engine: string;
 
-  @Prop({ required: true })
+  @Prop()
   mileage?: number;
 
  

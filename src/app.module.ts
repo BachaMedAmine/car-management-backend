@@ -10,6 +10,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AiModule } from './ai/ai.module';
 import { AiService } from './ai/ai.service';
 import { AiController } from './ai/ai.controller';
+import { MaintenanceModule } from './maintenance/maintenance.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { AiController } from './ai/ai.controller';
     UsersModule, // Import UsersModule for user management
     CarsModule, // Import CarsModule for car-related features
     EmailModule,
-    AiModule, // Import EmailModule for email services
+    AiModule,
+    MaintenanceModule, // Import EmailModule for email services
   ],
 })
 export class AppModule {}
