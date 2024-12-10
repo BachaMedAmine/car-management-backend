@@ -33,8 +33,28 @@ export class UsersController
   @Post('register')
   @UsePipes(new ValidationPipe()) // Apply validation pipe to enforce DTO validation
   async register(@Body() createUserDto: CreateUserDto) {
+    // Force the role to 'user' for public registration
+    createUserDto.role = 'user';
     return this.usersService.createUser(createUserDto);
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
+@Get('admin-dashboard')
+async adminDashboard() {
+  return { message: 'Welcome to the Admin Dashboard' };
+}
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin') // Only admins can access this route
+@Post('register-admin')
+async registerAdmin(@Body() createUserDto: CreateUserDto) {
+  // Ensure that the role is explicitly set to 'admin'
+  if (createUserDto.role !== 'admin') {
+    throw new BadRequestException('Only admins can register other admins');
+  }
+  return this.usersService.createUser(createUserDto);
+}
 
   // Admin-Only Route (Protected by JwtAuthGuard and RolesGuard)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -52,11 +72,11 @@ export class UsersController
       return { message: 'User profile data' };
     }
 
-  @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin') // Only admins can access this route
+    @Get('all')
     async getAllUsers() {
-  return this.usersService.findAllUsers();
+      return this.usersService.findAllUsers();
     }
 
 

@@ -1,6 +1,6 @@
 // src/users/dto/create-user.dto.ts
 
-import { IsEmail, IsNotEmpty, MinLength, IsObject, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsIn,MinLength, IsObject, IsOptional } from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail() // Validates that email is in correct format
@@ -13,7 +13,8 @@ export class CreateUserDto {
   @IsNotEmpty() // Ensures the name is not empty
   name: string;
 
-  @IsOptional() // Makes the role optional
+  @IsOptional()
+  @IsIn(['user', 'admin']) // Ensure role is either user or admin
   role?: string;
 
   @IsOptional() // This makes confirmPassword optional

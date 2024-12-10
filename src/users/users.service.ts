@@ -194,4 +194,6 @@ async updateUserPassword(userId: string, newPassword: string) {
     return { message: 'Password updated successfully' };
   }
 
+  
+
 }

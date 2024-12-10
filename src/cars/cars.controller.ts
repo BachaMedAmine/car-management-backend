@@ -24,18 +24,37 @@ import { Types } from 'mongoose';
 export class CarsController {
   constructor(private readonly carsService: CarsService) {}
 
-  // Create a new car for the authenticated user
-  @Post()
-async createCar(@Body() createCarDto: CreateCarDto, @CurrentUser() user) {
-  return this.carsService.createCar(createCarDto, user.sub);  // Use 'sub' instead of 'userId'
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin') // Ensure only admins can access this route
+@Get('owner/:id')
+async getUserWithCars(@Param('id') id: string) {
+  return this.carsService.getUserWithCars(id);
 }
 
+
   // Get all cars (admin only)
-  @Get()
-  @UseGuards(RolesGuard)
-  @Roles('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin') // Only admins can access this route
+  @Get('all')
   async getAllCars() {
     return this.carsService.findAllCars();
+  }
+
+  // Get car statistics (admin only)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin') // Ensure only admins can access this route
+  @Get('statistics')
+  async getCarStatistics() {
+    return this.carsService.getCarStatistics();
+  }
+
+  // Get all cars statistics (admin only)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin') // Ensure only admins can access this route
+  @Get('all-statistics')
+  async getAllCarsStatistics() {
+    return this.carsService.getAllCarsStatistics();
   }
 
   // Get a specific car by ID (authenticated users)
@@ -55,7 +74,6 @@ async createCar(@Body() createCarDto: CreateCarDto, @CurrentUser() user) {
   async deleteCar(@Param('id') id: string) {
     return this.carsService.deleteCar(id);
   }
-
 
  
 @Post('upload-image')
@@ -113,5 +131,7 @@ async getCarsByOwner(@Req() req): Promise<Car[]> {
 
     return this.carsService.findCarsByOwner(objectId.toString());
 }
+
+
 
 }

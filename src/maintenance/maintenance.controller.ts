@@ -7,10 +7,7 @@ export class MaintenanceController {
 
   // Fetch all maintenance tasks for a specific car
   @Get(':carId')
-  async getTasks(
-    @Param('carId') carId: string,
-    @Query('status') status?: string,
-  ) {
+  async getTasks(@Param('carId') carId: string, @Query('status') status?: string) {
     return this.maintenanceService.getTasksForCar(carId, status);
   }
 
@@ -22,10 +19,7 @@ export class MaintenanceController {
 
   // Add a new maintenance task
   @Post(':carId/task')
-  async addTask(
-    @Param('carId') carId: string,
-    @Body() taskDto: { task: string; dueDate: string; status?: string },
-  ) {
+  async addTask(@Param('carId') carId: string, @Body() taskDto: { task: string; dueDate: string; status?: string }) {
     const task = {
       carId,
       task: taskDto.task,

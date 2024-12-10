@@ -66,12 +66,12 @@ export class CarsService {
 
   // Get all cars (admin only)
   async findAllCars(): Promise<Car[]> {
-    return this.carModel.find().populate('owner').exec();
+    return this.carModel.find().exec(); // Fetch all cars
   }
 
   // Get a specific car by ID
   async findCarById(id: string): Promise<Car> {
-    const car = await this.carModel.findById(id).populate('owner').exec();
+    const car = await this.carModel.findById(id).exec();
     if (!car) {
       throw new NotFoundException(`Car with ID ${id} not found`);
     }
@@ -121,6 +121,55 @@ export class CarsService {
     }
   }
     
+  async getCarStatistics(): Promise<{ make: string; count: number }[]> {
+    try {
+      return await this.carModel.aggregate([
+        {
+          $group: {
+            _id: '$make', // Group by the `make` field
+            count: { $sum: 1 },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            make: '$_id', // Rename `_id` to `make`
+            count: 1,
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('Error during aggregation:', error);
+      throw new InternalServerErrorException('Failed to fetch car statistics');
+    }
+  }
 
 
+  async getAllCarsStatistics(): Promise<{ totalCars: number }> {
+    try {
+      // Count the total number of cars in the database
+      const totalCars = await this.carModel.countDocuments();
+  
+      return { totalCars };
+    } catch (error) {
+      console.error('Error fetching total cars count:', error.message);
+      throw new InternalServerErrorException('Failed to fetch total cars count');
+    }
+  }
+  async getUserWithCars(userId: string): Promise<any> {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new BadRequestException('Invalid user ID format');
+    }
+  
+    const cars = await this.carModel.find({ owner: userId }).populate('owner').exec();
+  
+    if (!cars || cars.length === 0) {
+      throw new NotFoundException(`No cars found for user with ID ${userId}`);
+    }
+  
+    return {
+      userId,
+      cars,
+    };
+  }
 }

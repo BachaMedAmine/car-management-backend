@@ -17,92 +17,81 @@ export class MaintenanceService {
     const car = await this.carsService.getCarById(carId);
 
     if (!car) {
-        throw new Error('Car not found');
+      throw new Error('Car not found');
     }
 
     const maintenanceTasks = [];
-
-    // Fetch recently completed tasks
     const recentTasks = await this.getRecentTasks(carId);
 
-    if (car.mileage === 0) {
-        return [
-            {
-                carId: carId,
-                task: 'No maintenance required',
-                dueDate: null,
-                status: 'Not Applicable',
-                lastMileage: null,
-                nextMileage: null,
-            },
-        ];
+    console.log('Car Mileage:', car.mileage);
+    console.log('Recent Tasks:', recentTasks);
+
+    // Low mileage task
+    if (car.mileage <= 10000 && !recentTasks.includes('Battery Check')) {
+      maintenanceTasks.push({
+        carId: carId,
+        task: 'Battery Check',
+        dueDate: new Date(),
+        status: 'Pending',
+      });
     }
 
-    // Add predefined tasks
+    // Predefined tasks
     if (car.mileage > 10000 && !recentTasks.includes('Oil Change')) {
-        maintenanceTasks.push({
-            carId: carId,
-            task: 'Oil Change',
-            dueDate: new Date(),
-            status: 'Pending',
-        });
+      maintenanceTasks.push({
+        carId: carId,
+        task: 'Oil Change',
+        dueDate: new Date(),
+        status: 'Pending',
+      });
     }
 
     if (car.mileage > 50000 && !recentTasks.includes('Brake Change')) {
-        maintenanceTasks.push({
-            carId: carId,
-            task: 'Brake Change',
-            dueDate: new Date(),
-            status: 'Pending',
-        });
+      maintenanceTasks.push({
+        carId: carId,
+        task: 'Brake Change',
+        dueDate: new Date(),
+        status: 'Pending',
+      });
     }
 
     if (car.mileage > 50000 && !recentTasks.includes('Tire Replacement')) {
-        maintenanceTasks.push({
-            carId: carId,
-            task: 'Tire Replacement',
-            dueDate: new Date(),
-            status: 'Pending',
-        });
+      maintenanceTasks.push({
+        carId: carId,
+        task: 'Tire Replacement',
+        dueDate: new Date(),
+        status: 'Pending',
+      });
     }
 
     // AI predictions
-    const aiPrediction = await this.predictUsingAI([
-        car.mileage,
-        car.year,
-        1.0, 2.0, 3.0,
-    ]);
+    const aiPrediction = await this.predictUsingAI([car.mileage, car.year, 1.0, 2.0, 3.0]);
 
     const tasksMap = ['Oil Change', 'Belt Change', 'Brake Change', 'Tire Replacement'];
     aiPrediction.forEach((pred, index) => {
-        const task = tasksMap[index];
-        if (Number(pred) === 1 && !recentTasks.includes(task)) {
-            maintenanceTasks.push({
-                carId: carId,
-                task: task,
-                dueDate: new Date(),
-                status: 'Pending',
-            });
-        }
+      const task = tasksMap[index];
+      if (Number(pred) === 1 && !recentTasks.includes(task)) {
+        maintenanceTasks.push({
+          carId: carId,
+          task: task,
+          dueDate: new Date(),
+          status: 'Pending',
+        });
+      }
     });
 
-    // Normalize the tasks
-    const normalizedTasks = maintenanceTasks.map((task) => ({
-        ...task,
-        lastMileage: task.lastMileage !== null ? task.lastMileage.toString() : "Unknown",
-        nextMileage: task.nextMileage !== null ? task.nextMileage.toString() : "Unknown",
-    }));
-    return normalizedTasks;
-}
+    console.log('Generated Maintenance Tasks:', maintenanceTasks);
+
+    return maintenanceTasks;
+  }
 
   // Call the Python script for AI-based predictions
   async predictUsingAI(features: number[]): Promise<number[]> {
     return new Promise((resolve, reject) => {
-      const process = spawn('python3', ['predict.py', ...features.map(String)]);
+      const process = spawn('./venv/bin/python3', ['predict.py', ...features.map(String)]);
 
       process.stdout.on('data', (data) => {
         try {
-          // Parse the JSON response from the Python script
           const predictions = JSON.parse(data.toString().trim());
           resolve(predictions);
         } catch (error) {
@@ -116,7 +105,7 @@ export class MaintenanceService {
     });
   }
 
-  // Add a new maintenance task (e.g., from user input)
+  // Add a new maintenance task
   async addTask(task: Partial<Maintenance>): Promise<Maintenance> {
     const newTask = new this.maintenanceModel(task);
     return newTask.save();
@@ -133,11 +122,7 @@ export class MaintenanceService {
 
   // Mark a task as completed
   async completeTask(taskId: string): Promise<Maintenance> {
-    return this.maintenanceModel.findByIdAndUpdate(
-      taskId,
-      { status: 'Completed' },
-      { new: true },
-    );
+    return this.maintenanceModel.findByIdAndUpdate(taskId, { status: 'Completed' }, { new: true });
   }
 
   // Fetch tasks completed within the last 6 months
@@ -155,26 +140,5 @@ export class MaintenanceService {
       .exec();
 
     return recentTasks.map((task) => task.task);
-  }
-
-  // Fetch the last mileage for a specific task
-  async getLastServiceMileage(carId: string, taskType: string): Promise<number> {
-    const lastTask = await this.maintenanceModel
-      .findOne({ carId, task: taskType, status: 'Completed' })
-      .sort({ dueDate: -1 })
-      .exec();
-
-    return lastTask ? lastTask['mileage'] : 0; // Default to 0 if no record
-  }
-
-  // Calculate the next mileage for a specific task
-  calculateNextServiceMileage(lastMileage: number, taskType: string): number {
-    const intervals = {
-      'Oil Change': 10000,
-      'Brake Change': 50000,
-      'Tire Replacement': 50000,
-    };
-
-    return lastMileage + (intervals[taskType] || 0); // Default to 0 if task is unknown
   }
 }
