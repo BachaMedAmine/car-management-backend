@@ -11,6 +11,7 @@ import { AiModule } from './ai/ai.module';
 import { AiService } from './ai/ai.service';
 import { AiController } from './ai/ai.controller';
 import { MaintenanceModule } from './maintenance/maintenance.module';
+import { CarPartsModule } from './car-part/car-part.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
     CarsModule, // Import CarsModule for car-related features
     EmailModule,
     AiModule,
-    MaintenanceModule, // Import EmailModule for email services
+    MaintenanceModule,
+    CarPartsModule, // Import EmailModule for email services
   ],
 })
 export class AppModule {}
