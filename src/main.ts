@@ -13,8 +13,8 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new AllExceptionsFilter());
-  app.use('/uploads', express.static(join(__dirname, '..', 'uploads')));
-
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('The API documentation')

@@ -33,10 +33,10 @@ export class CarsService {
 
         // Set a default mileage if not provided
         const mileage = carDetails.mileage || 0;
-        const imageUrl = `http://localhost:3000/uploads/${file.filename}`;
-
-        // Create the new car document
+        const imageUrl = `${process.env.HOST ?? 'http://localhost:3000'}/uploads/${file.filename}`;// Create the new car document
+        
         const newCar = new this.carModel({
+
             make: carDetails.brand,
             carModel: carDetails.model,
             year: parseInt(carDetails.year, 10),

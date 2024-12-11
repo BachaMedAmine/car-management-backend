@@ -18,10 +18,10 @@ export class AiService {
             console.log('Uploading image to Google AI...');
 
             const uploadResult = await this.fileManager.uploadFile(
-                path.join(__dirname, '../..', 'uploads', image.filename),
+                path.resolve(process.cwd(), 'uploads', image.filename), // Resolves path from the project root
                 {
-                    mimeType: "image/jpeg",
-                    displayName: "car image",
+                    mimeType: image.mimetype,
+                    displayName: 'car image',
                 },
             );
 
