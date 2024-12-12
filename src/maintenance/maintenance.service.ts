@@ -13,79 +13,98 @@ export class MaintenanceService {
   ) {}
 
   // Calculate maintenance tasks for a specific car
-  async calculateMaintenance(carId: string): Promise<any> {
+  async calculateMaintenance(carId: string, excludedTasks: string[] = []): Promise<any> {
     const car = await this.carsService.getCarById(carId);
 
     if (!car) {
       throw new Error('Car not found');
     }
 
+    console.log('--- Maintenance Calculation Start ---');
+    console.log('Car Data:', car);
+
     const maintenanceTasks = [];
     const recentTasks = await this.getRecentTasks(carId);
 
-    console.log('Car Mileage:', car.mileage);
     console.log('Recent Tasks:', recentTasks);
+    console.log('Excluded Tasks:', excludedTasks);
 
-    // Low mileage task
-    if (car.mileage <= 10000 && !recentTasks.includes('Battery Check')) {
-      maintenanceTasks.push({
-        carId: carId,
-        task: 'Battery Check',
-        dueDate: new Date(),
-        status: 'Pending',
-      });
-    }
-
-    // Predefined tasks
-    if (car.mileage > 10000 && !recentTasks.includes('Oil Change')) {
-      maintenanceTasks.push({
-        carId: carId,
-        task: 'Oil Change',
-        dueDate: new Date(),
-        status: 'Pending',
-      });
-    }
-
-    if (car.mileage > 50000 && !recentTasks.includes('Brake Change')) {
-      maintenanceTasks.push({
-        carId: carId,
-        task: 'Brake Change',
-        dueDate: new Date(),
-        status: 'Pending',
-      });
-    }
-
-    if (car.mileage > 50000 && !recentTasks.includes('Tire Replacement')) {
-      maintenanceTasks.push({
-        carId: carId,
-        task: 'Tire Replacement',
-        dueDate: new Date(),
-        status: 'Pending',
-      });
-    }
-
-    // AI predictions
-    const aiPrediction = await this.predictUsingAI([car.mileage, car.year, 1.0, 2.0, 3.0]);
-
-    const tasksMap = ['Oil Change', 'Belt Change', 'Brake Change', 'Tire Replacement'];
-    aiPrediction.forEach((pred, index) => {
-      const task = tasksMap[index];
-      if (Number(pred) === 1 && !recentTasks.includes(task)) {
+    // Handle edge case for 0 km
+    if (car.mileage === 0) {
+      console.log('Car has 0 km. Scheduling first oil change based on time.');
+      if (!excludedTasks.includes('First Oil Change')) {
         maintenanceTasks.push({
           carId: carId,
-          task: task,
-          dueDate: new Date(),
+          task: 'First Oil Change',
+          dueDate: this.calculateDueDate(180), // Due in 180 days
           status: 'Pending',
         });
       }
-    });
+      console.log('Generated Maintenance Tasks for 0 km:', maintenanceTasks);
+      console.log('--- Maintenance Calculation End ---');
+      return maintenanceTasks; // Return immediately for 0 km
+    }
+
+    // Oil change logic: Calculate the next milestone
+    const oilChangeInterval = 10000; // Every 10,000 km
+    const nextOilChange = Math.ceil(car.mileage / oilChangeInterval) * oilChangeInterval;
+
+    console.log('Current Mileage:', car.mileage);
+    console.log('Next Oil Change Mileage:', nextOilChange);
+
+    if (!recentTasks.includes('Oil Change') && car.mileage < nextOilChange && !excludedTasks.includes('Oil Change')) {
+      maintenanceTasks.push({
+        carId: carId,
+        task: 'Oil Change',
+        dueDate: null, // Mileage-based recommendation
+        nextMileage: nextOilChange, // Next milestone for oil change
+        status: 'Pending',
+      });
+      console.log('Oil Change Task Added:', {
+        carId: carId,
+        task: 'Oil Change',
+        nextMileage: nextOilChange,
+        status: 'Pending',
+      });
+    } else {
+      console.log('Oil Change Task Already Completed or Excluded.');
+    }
+
+    // Predefined tasks for other maintenance
+    if (car.mileage > 50000 && !recentTasks.includes('Brake Change') && !excludedTasks.includes('Brake Change')) {
+      maintenanceTasks.push({
+        carId: carId,
+        task: 'Brake Change',
+        dueDate: this.calculateDueDate(60), // Example: 60 days from now
+        status: 'Pending',
+      });
+      console.log('Brake Change Task Added');
+    }
+
+    if (car.mileage > 50000 && !recentTasks.includes('Tire Replacement') && !excludedTasks.includes('Tire Replacement')) {
+      maintenanceTasks.push({
+        carId: carId,
+        task: 'Tire Replacement',
+        dueDate: this.calculateDueDate(90), // Example: 90 days from now
+        status: 'Pending',
+      });
+      console.log('Tire Replacement Task Added');
+    }
 
     console.log('Generated Maintenance Tasks:', maintenanceTasks);
+    console.log('--- Maintenance Calculation End ---');
 
     return maintenanceTasks;
   }
 
-  // Call the Python script for AI-based predictions
+  // Helper: Calculate a future due date
+  private calculateDueDate(daysFromNow: number): Date {
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + daysFromNow);
+    return dueDate;
+  }
+
+  // Call the Python script for AI-based predictions (if applicable)
   async predictUsingAI(features: number[]): Promise<number[]> {
     return new Promise((resolve, reject) => {
       const process = spawn('./venv/bin/python3', ['predict.py', ...features.map(String)]);
@@ -122,7 +141,13 @@ export class MaintenanceService {
 
   // Mark a task as completed
   async completeTask(taskId: string): Promise<Maintenance> {
-    return this.maintenanceModel.findByIdAndUpdate(taskId, { status: 'Completed' }, { new: true });
+    const updatedTask = await this.maintenanceModel.findByIdAndUpdate(
+      taskId,
+      { status: 'Completed' },
+      { new: true },
+    );
+    console.log('Updated Task:', updatedTask); // Log the updated task
+    return updatedTask;
   }
 
   // Fetch tasks completed within the last 6 months

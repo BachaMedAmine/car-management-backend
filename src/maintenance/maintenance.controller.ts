@@ -13,8 +13,11 @@ export class MaintenanceController {
 
   // Calculate upcoming maintenance tasks for a car
   @Get(':carId/predict')
-  async calculateTasks(@Param('carId') carId: string) {
-    return this.maintenanceService.calculateMaintenance(carId);
+  async calculateTasks(
+    @Param('carId') carId: string,
+    @Query('excludedTasks') excludedTasks: string[] = [], // Optional query parameter
+  ) {
+    return this.maintenanceService.calculateMaintenance(carId, excludedTasks);
   }
 
   // Add a new maintenance task
@@ -34,4 +37,6 @@ export class MaintenanceController {
   async completeTask(@Param('taskId') taskId: string) {
     return this.maintenanceService.completeTask(taskId);
   }
+
+  
 }

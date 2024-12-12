@@ -15,6 +15,9 @@ export class Maintenance extends Document {
   @Prop({ default: 'Pending' })
   status: string; // Task status: "Pending", "Completed"
 
+  @Prop({ default: false })
+  completed: boolean; 
+  
   @Prop()
   comments?: string; // Optional notes or remarks
 }
