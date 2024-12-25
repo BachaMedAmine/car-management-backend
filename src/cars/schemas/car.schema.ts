@@ -26,6 +26,12 @@ export class Car extends Document {
   imageUrl: string;
 
 
+  @Prop()
+  lastTimingChainReplacementDate: Date | null; // Add this property
+
+  @Prop()
+  lastTimingChainReplacementMileage: number; // Add this property
+
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     owner: Types.ObjectId;
 }

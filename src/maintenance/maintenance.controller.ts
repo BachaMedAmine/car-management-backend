@@ -1,5 +1,6 @@
-import { Controller, Query, Get, Post, Put, Param, Body } from '@nestjs/common';
+import { Controller, Query,Patch, Get, Post, Put, Param, Body } from '@nestjs/common';
 import { MaintenanceService } from './maintenance.service';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Controller('maintenance')
 export class MaintenanceController {
@@ -8,7 +9,17 @@ export class MaintenanceController {
   // Fetch all maintenance tasks for a specific car
   @Get(':carId')
   async getTasks(@Param('carId') carId: string, @Query('status') status?: string) {
-    return this.maintenanceService.getTasksForCar(carId, status);
+      try {
+          const tasks = await this.maintenanceService.getTasksForCar(carId, status);
+          
+          // Debugging: Log tasks returned from service
+          console.log("Tasks returned to controller:", tasks);
+  
+          return tasks;
+      } catch (error) {
+          console.error("Error fetching tasks:", error.message);
+          throw new Error("Could not fetch tasks. Please try again later.");
+      }
   }
 
   // Calculate upcoming maintenance tasks for a car
@@ -22,21 +33,29 @@ export class MaintenanceController {
 
   // Add a new maintenance task
   @Post(':carId/task')
-  async addTask(@Param('carId') carId: string, @Body() taskDto: { task: string; dueDate: string; status?: string }) {
-    const task = {
-      carId,
-      task: taskDto.task,
-      dueDate: new Date(taskDto.dueDate),
-      status: taskDto.status || 'Pending',
-    };
-    return this.maintenanceService.addTask(task);
-  }
+async addTask(
+  @Param('carId') carId: string,
+  @Body() taskDto: { task: string; dueDate: string; status?: string },
+) {
+  return this.maintenanceService.addTask(carId, taskDto);
+}
 
   // Mark a maintenance task as completed
   @Put('task/:taskId/complete')
   async completeTask(@Param('taskId') taskId: string) {
+    console.log(`Completing task with ID: ${taskId}`);
     return this.maintenanceService.completeTask(taskId);
   }
 
-  
+  @Patch(':id')
+  async updateTask(
+    @Param('id') taskId: string,
+    @Body() updateTaskDto: UpdateTaskDto,
+    @Body('carId') carId: string,
+    @Body('newMileage') newMileage?: number,
+  ) {
+    return this.maintenanceService.updateTask(taskId, updateTaskDto, carId, newMileage);
+  }
+
+ 
 }

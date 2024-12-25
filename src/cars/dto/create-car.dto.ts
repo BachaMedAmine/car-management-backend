@@ -24,4 +24,7 @@ export class CreateCarDto {
   mileage: number;
 
   
+  lastTimingChainReplacementDate: Date | null; // Add this property
+  lastTimingChainReplacementMileage: number; // Add this property
+  
 }

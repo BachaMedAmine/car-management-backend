@@ -24,7 +24,8 @@ import { CarPartsModule } from './car-part/car-part.module';
     EmailModule,
     AiModule,
     MaintenanceModule,
-    CarPartsModule, // Import EmailModule for email services
+    CarPartsModule,
+  // Import EmailModule for email services
   ],
 })
 export class AppModule {}
