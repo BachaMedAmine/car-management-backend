@@ -257,19 +257,21 @@ export class MaintenanceService {
 
   // Mark a task as completed
   async completeTask(taskId: string): Promise<Maintenance> {
-    // Convert taskId to ObjectId
-    if (!Types.ObjectId.isValid(taskId)) {
-        throw new Error(`Invalid ObjectId: ${taskId}`);
-    }
+    const queryId = Types.ObjectId.isValid(taskId)
+        ? new Types.ObjectId(taskId)
+        : taskId;
 
     const updatedTask = await this.maintenanceModel.findByIdAndUpdate(
-        new Types.ObjectId(taskId), // Ensure this is passed as an ObjectId
-        { status: 'Completed' },
+        queryId,
+        {
+            status: 'Completed',
+            completedDate: new Date(),
+        },
         { new: true }
     );
 
     if (!updatedTask) {
-        throw new Error(`Task not found for ID: ${taskId}`);
+        throw new NotFoundException(`Task not found for ID: ${taskId}`);
     }
 
     return updatedTask;
@@ -299,24 +301,25 @@ export class MaintenanceService {
     carId: string,
     newMileage?: number,
 ): Promise<any> {
-    // Check if taskId is a valid ObjectId or UUID
-    const isObjectId = Types.ObjectId.isValid(taskId);
-    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId);
-
-    const queryId = isObjectId ? new Types.ObjectId(taskId) : isUUID ? taskId : null;
+    // Validate taskId as ObjectId or UUID
+    const queryId = Types.ObjectId.isValid(taskId)
+        ? new Types.ObjectId(taskId)
+        : /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(taskId)
+        ? taskId
+        : null;
 
     if (!queryId) {
         throw new BadRequestException(`Invalid taskId: ${taskId}`);
     }
 
-    console.log(`Task ID: ${taskId}, Querying with ID: ${queryId}`);
+    console.log(`Processing update for Task ID: ${taskId}, Querying with ID: ${queryId}`);
 
     // Find the task
-    const task = await this.maintenanceModel.findOne({ _id: queryId });
-
+    const task = await this.maintenanceModel.findById(queryId);
     if (!task) {
         throw new NotFoundException(`Task with ID ${taskId} not found`);
     }
+
     // Validate the car
     const car = await this.carsService.getCarById(carId);
     if (!car) {
@@ -332,38 +335,37 @@ export class MaintenanceService {
         }
 
         car.mileage = newMileage;
-        await car.save();
+        await car.save(); // Save updated car mileage
 
-        // Update task's nextMileage based on task type
+        // Update the task's nextMileage based on task type
         task.nextMileage = this.calculateNextMileage(task.task, newMileage);
     }
 
-    // Update task details
+    // Update task details based on the DTO
     if (updateTaskDto.status) {
         task.status = updateTaskDto.status;
     }
     if (updateTaskDto.comments) {
         task.comments = updateTaskDto.comments;
     }
+    
 
-    // Set dueDate if task is marked as completed and nextMileage is not defined
+    // Set a default dueDate if task is completed and nextMileage is not defined
     if (updateTaskDto.status === 'Completed' && !task.nextMileage) {
-        task.dueDate = this.calculateDueDate(90); // 90 days from today
+        task.dueDate = this.calculateDueDate(90); // Default: 90 days from now
     }
 
-    // Save updated task
-    const updatedTask = await this.maintenanceModel.findByIdAndUpdate(
-        queryId,
-        task,
-        { new: true },
-    );
+    // Save the updated task
+    const updatedTask = await task.save();
 
-    // Debugging: Log the updated task
+    // Debugging: Log updated task and car
     console.log(`Updated Task: ${JSON.stringify(updatedTask)}`);
+    console.log(`Updated Car Mileage: ${car.mileage}`);
 
     return updatedTask;
 }
-// Helper to calculate next mileage
+
+// Helper to calculate next mileage based on task type
 private calculateNextMileage(taskType: string, currentMileage: number): number {
     switch (taskType) {
         case 'Oil Change':
@@ -375,9 +377,24 @@ private calculateNextMileage(taskType: string, currentMileage: number): number {
         case 'Tire Replacement':
             return currentMileage + 50000;
         default:
-            return currentMileage + 5000; // Generic interval
+            return currentMileage + 5000; // Default interval for unclassified tasks
     }
- }
+}
 
+async getUserCompletedTasks(userId: string, limit: number, offset: number): Promise<any[]> {
+  const userCars = await this.carsService.findCarsByOwner(userId);
+  const carIds = userCars.map(car => car.id);
+
+  const tasks = await this.maintenanceModel
+      .find({ carId: { $in: carIds }, status: 'Completed' }) // Filter by status
+      .skip(offset)
+      .limit(limit)
+      .lean();
+
+  return tasks.map(task => ({
+      ...task,
+      _id: task._id.toString(), // Convert ObjectId to string
+  }));
+}
 
 }

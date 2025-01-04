@@ -25,6 +25,9 @@ export class Maintenance extends Document {
 
   @Prop()
   comments?: string; // Optional notes or remarks
+
+  @Prop()
+  completedDate?: Date; 
 }
 
 export const MaintenanceSchema = SchemaFactory.createForClass(Maintenance);

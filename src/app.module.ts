@@ -12,6 +12,8 @@ import { AiService } from './ai/ai.service';
 import { AiController } from './ai/ai.controller';
 import { MaintenanceModule } from './maintenance/maintenance.module';
 import { CarPartsModule } from './car-part/car-part.module';
+import { CommentsModule } from './comments/comments.module';
+import { PostsModule } from './posts/posts.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { CarPartsModule } from './car-part/car-part.module';
     AiModule,
     MaintenanceModule,
     CarPartsModule,
+    CommentsModule,
+    PostsModule,
   // Import EmailModule for email services
   ],
 })

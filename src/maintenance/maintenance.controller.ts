@@ -41,11 +41,21 @@ async addTask(
 }
 
   // Mark a maintenance task as completed
+  @Get('/user/:userId/completed')
+  async getUserCompletedTasks(
+    @Param('userId') userId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    const offset = (page - 1) * limit;
+    return this.maintenanceService.getUserCompletedTasks(userId, offset, limit);
+  }
+
   @Put('task/:taskId/complete')
-  async completeTask(@Param('taskId') taskId: string) {
+async completeTask(@Param('taskId') taskId: string) {
     console.log(`Completing task with ID: ${taskId}`);
     return this.maintenanceService.completeTask(taskId);
-  }
+}
 
   @Patch(':id')
   async updateTask(
